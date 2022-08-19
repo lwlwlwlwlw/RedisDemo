@@ -17,4 +17,5 @@ public interface IVoucherOrderService extends IService<VoucherOrder> {
     Result secKillVoucher(String voucherId);
 
 
+    Result createVoucherOrder(String voucherId, String toString);
 }
