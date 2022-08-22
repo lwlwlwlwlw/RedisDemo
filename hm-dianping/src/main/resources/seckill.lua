@@ -4,15 +4,16 @@
 --- DateTime: 2022/8/21 13:29
 ---
 
-
--- 参数：优惠券id，用户id
+-- 参数：优惠券id，用户id，订单id
 local voucherId = ARGV[1]
 local userId = ARGV[2]
+local orderId = ARGV[3]
 
 -- 库存key
 local stockKey = 'seckill:stock:' .. voucherId
 -- 订单key
 local orderKey = 'seckill:order:' .. voucherId
+
 
 -- 脚本业务
 -- 判断库存是否充足
@@ -31,4 +32,6 @@ end
 redis.call('incrby', stockKey, -1)
 -- 保存用户
 redis.call('sadd', orderKey, userId)
+-- 发送消息到 Redis 队列当中
+redis.call('xadd', 'stream.orders', '*', 'userId', userId, 'voucherId', voucherId, 'id', orderId)
 return 0
