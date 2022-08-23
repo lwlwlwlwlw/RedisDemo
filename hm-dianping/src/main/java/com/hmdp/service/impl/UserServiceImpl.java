@@ -19,10 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpSession;
-import java.net.http.HttpRequest;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -90,6 +87,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 设置数据有效期
         stringRedisTemplate.expire(tokenKey, RedisConstants.LOGIN_USER_TTL, TimeUnit.SECONDS);
         return Result.ok(RedisConstants.LOGIN_USER_KEY + uuid);
+    }
+
+    @Override
+    public Result queryById(Long userId) {
+        User user = getById(userId);
+        if (user == null)  return Result.fail("用户不存在");
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        return Result.ok(userDTO);
     }
 
     public User createUserByPhone(String phone) {

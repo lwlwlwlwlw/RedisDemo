@@ -119,6 +119,14 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         return Result.ok(userDTOS);
     }
 
+    @Override
+    public Result queryBlogByUserId(Integer current, Long userId) {
+        Page<Blog> blogPage = page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE),
+                new QueryWrapper<Blog>().eq("user_id", userId));
+        List<Blog> records = blogPage.getRecords();
+        return Result.ok(records);
+    }
+
     private void isBlogLiked(Blog blog) {
         // 获取登录用户
         UserDTO user = UserHolder.getUser();
