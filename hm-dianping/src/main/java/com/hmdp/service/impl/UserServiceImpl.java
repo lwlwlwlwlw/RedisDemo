@@ -14,11 +14,14 @@ import com.hmdp.service.IUserService;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.RegexUtils;
 import com.hmdp.utils.SystemConstants;
+import com.hmdp.utils.UserHolder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -95,6 +98,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         if (user == null)  return Result.fail("用户不存在");
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
         return Result.ok(userDTO);
+    }
+
+    @Override
+    public Result sign() {
+        // 获取登录用户
+        UserDTO user = UserHolder.getUser();
+        // 获取日期
+        LocalDateTime now = LocalDateTime.now();
+        int day = now.getDayOfMonth();
+        String curDate = now.format(DateTimeFormatter.ofPattern("yyyyMM"));
+        // 获取 key
+        String key = RedisConstants.USER_SIGN_KEY + curDate;
+        // 写入 Redis 中
+        stringRedisTemplate.opsForValue().setBit(key, day - 1, true);
+        return Result.ok();
     }
 
     public User createUserByPhone(String phone) {

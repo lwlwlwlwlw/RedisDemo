@@ -20,4 +20,6 @@ public interface IUserService extends IService<User> {
     Result login(LoginFormDTO loginFormDTO);
 
     Result queryById(Long userId);
+
+    Result sign();
 }
