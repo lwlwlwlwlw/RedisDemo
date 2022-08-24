@@ -17,12 +17,14 @@ import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -107,12 +109,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         // 获取日期
         LocalDateTime now = LocalDateTime.now();
         int day = now.getDayOfMonth();
-        String curDate = now.format(DateTimeFormatter.ofPattern("yyyyMM"));
+        String curDate = now.format(DateTimeFormatter.ofPattern(":yyyyMM"));
         // 获取 key
-        String key = RedisConstants.USER_SIGN_KEY + curDate;
+        String key = RedisConstants.USER_SIGN_KEY + user.getId() + curDate;
         // 写入 Redis 中
         stringRedisTemplate.opsForValue().setBit(key, day - 1, true);
         return Result.ok();
+    }
+
+    @Override
+    public Result signCount() {
+        // 获取登录用户
+        UserDTO user = UserHolder.getUser();
+        // 获取日期
+        LocalDateTime now = LocalDateTime.now();
+        int day = now.getDayOfMonth();
+        String curDate = now.format(DateTimeFormatter.ofPattern(":yyyyMM"));
+        // 获取 key
+        String key = RedisConstants.USER_SIGN_KEY + user.getId() + curDate;
+        // 获取本月截至今天为止的签到记录，返回的是一个十进制的数字
+        List<Long> result = stringRedisTemplate.opsForValue().bitField(key,
+                BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(day)).valueAt(0));
+        if (result == null || result.isEmpty())  return Result.ok();
+        Long num = result.get(0);
+        if (num == null || num == 0)  return Result.ok();
+        // 循环遍历各个比特
+        int count = 0;
+        while (true) {
+            // 与 1 逻辑与，得到最终结果
+            if ((num & 1) == 0) {
+                // 未签到，结束
+                break;
+            } else {
+                // 签到，计数器加一
+                count++;
+            }
+            num >>>= 1;
+        }
+        return Result.ok(count);
     }
 
     public User createUserByPhone(String phone) {
